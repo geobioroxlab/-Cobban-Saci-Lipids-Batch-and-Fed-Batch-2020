@@ -291,7 +291,7 @@ QuadPlot <- function(dataframe, column, name,calculateRates = TRUE, RateAxisMin 
   DoublePlot <-ggplot(dataframe, aes(x = 1/Rate, y = RI)) + 
     labs(x = "Doubling Time (Hours)", y ="RI")+
     scale_x_continuous(limits = c(RateAxisMin, RateAxisMax))+
-    geom_point(size = 5 ,aes_string(shape= paste("as.factor(",column,")", sep = ""))) +
+    geom_point(size = 15 ,aes_string(shape= paste("as.factor(",column,")", sep = ""))) +
     geom_smooth(method = "lm", size =2) + myTheme + ylim(RIAxisMin,RIAxisMax) +
     theme(legend.position="right",strip.background = element_blank(), legend.key = element_rect(fill = "white"), legend.text = element_text(size = 40), legend.title = element_text(size =40)) + labs(shape=column)+
     theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+

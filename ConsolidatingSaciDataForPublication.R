@@ -22,8 +22,8 @@ RateAxisMin = 0
 RateAxisMax = 120
 SacrificeMin = 0.4
 SacrificeMax = 2.3
-PointSize<- 5
-strokeSize <- 3
+PointSize<- 15
+strokeSize <- 5
 LogODMin <- -8
 LogODMax <- 0.8
 TimeMin <- 0
@@ -31,6 +31,8 @@ TimeMax <- 200
 minorAxisLength <- 0.15
 axisTickSize <- 2
 GrowthCurvePointSize = 15
+GrowthCurveStrokeSize = 4
+GrowthCurvePointSizeHollow <- GrowthCurvePointSize - 1/2*GrowthCurveStrokeSize
 myTheme = list(theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
               panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face = "bold", size = 40), axis.text = element_text(size = 36, colour = "black"),strip.text = element_text(size = 36, colour = "black"), strip.background = element_rect(colour=NA, fill=NA), strip.placement = "outside"))
 
@@ -119,13 +121,17 @@ mydOPlot = ggplot(GrowthCurvedOData, aes(x = timeElapsed, y = (mean), color = as
   xlab("Time Since Start of Experiment")+ ylab("OD600")
 mydOPlot
 
-myLogdOPlot = ggplot(GrowthCurvedOData, aes(x = timeElapsed, y = log(mean), color = as.factor(ID))) +
-  geom_line() +
-  geom_point()+ myTheme+ theme(legend.position = "right", legend.key = element_rect(fill = "transparent", color = NA), axis.ticks = element_line(color = "black", size = axisTickSize)) +
-  geom_errorbar(aes(x = timeElapsed, ymin = log(mean-se), ymax = log(mean+se)))+
-  scale_color_manual(breaks = c("1", "2","5", "4", "6","3"),labels = c("20%", "2%","1%", "0.5%" ,"0.2%*","0.2%"), name = "Experimental Conditions", values = c("dodgerblue1","dodgerblue2","darkorchid1", "dodgerblue4","darkorchid2","dodgerblue3"))+
-  xlab("Time Since Start of Experiment")+ ylab("Log(OD600)") + coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax))
+myLogdOPlot = ggplot(GrowthCurvedOData, aes(x = timeElapsed, y = log2(mean), shape = as.factor(ID), size = as.factor(ID)))+
+  geom_line(size =2, color = "darkgreen") +
+  geom_point(color = "darkgreen", stroke = GrowthCurveStrokeSize)+ myTheme+ theme(legend.position = c(0.8, 0.25), legend.key = element_rect(fill = "transparent", color = NA), axis.ticks = element_line(color = "black", size = axisTickSize), axis.text = element_text(size = 48), legend.text = element_text(size = 48), legend.title = element_text(face = "bold", size = 48)) +
+  geom_errorbar(aes(x = timeElapsed, ymin = log2(mean)-Log2SE, ymax = log2(mean)+Log2SE), width = 4, size = 1)+
+  scale_shape_manual(breaks = c("1", "2","5", "4","6",  "3"),labels = c("20", "2","1", "0.5" ,"0.2*","0.2"), name = "O2%", values = c(16,17,6,1,15,2))+ scale_size_manual(guide = "none",values = c(GrowthCurvePointSize, GrowthCurvePointSize, GrowthCurvePointSizeHollow, GrowthCurvePointSizeHollow, GrowthCurvePointSize, GrowthCurvePointSizeHollow)) +
+  xlab("Time Since Start of Experiment")+ ylab(element_blank())+
+  scale_y_continuous(sec.axis = sec_axis(trans = (~2^.),name = "OD600", breaks = c(0.01, 0.1, 0.5, 1, 2), labels = c(0.01, 0.1, 0.5, 1, 2))) +
+  coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax)) + guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize)))
+
 myLogdOPlot
+
 
 dataframedOLateLog <- subset(dataframedO2, Phase == "LL")
 dOGDGTLateLog <- ggplot(dataframedOLateLog, aes(x=as.factor(Replicate), y= value, fill=forcats::fct_rev(variable))) +  
@@ -152,11 +158,12 @@ dOGDGTEarlyStationary
 #Produce a 
 n <-ggplot(data = dOdf, aes(x = 1/Rate, y = RI, color=Phase)) + 
   labs(x = "Doubling Time (Hours)", y ="RI", shape = expression("O"["2"]*"%)"))+
-  geom_point(size = 5, aes(shape = as.factor(RPM),text =sprintf("dO: %s", dOdf$RPM))) +
-  scale_shape_manual(values = (c(16,17,18,2,1,15)), labels = c("0.2", "0.2*", "0.5", "1", "2", "20"))+
-  geom_smooth(method = "lm", size =2) + myTheme + theme(legend.position=c(0.9, 0.8), legend.text = element_text(size = 40), legend.title = element_text(size = 40), legend.key = element_rect(colour = "white"), strip.background = element_blank()) + coord_cartesian(ylim = c(RIaxisMin,RIaxisMax), xlim = c(RateAxisMin, RateAxisMax))+
+  geom_point(stroke = GrowthCurveStrokeSize -1, aes(shape = as.factor(RPM), size = as.factor(RPM))) +
+  scale_shape_manual(name = "O2%", values = c(16,17,15,1,2,6))+ scale_size_manual(guide = "none",values = c(GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3)) +
+  geom_smooth(method = "lm", size =2) + myTheme + theme(legend.position=c(0.9, 0.8), legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size = 48), legend.key = element_rect(colour = "white"), strip.background = element_blank()) + coord_cartesian(ylim = c(RIaxisMin,RIaxisMax), xlim = c(RateAxisMin, RateAxisMax))+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length = unit(minorAxisLength, "cm"))+
-  theme(axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(axis.ticks.y=element_line(color = "black", size = axisTickSize), axis.text = element_text(size = 48)) +
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
 
 
 n
@@ -195,16 +202,16 @@ dORIPlot
 dORIScatter <- ggplot(dOdf, aes(x = log10(RPM), y = RI, color = Phase, shape = as.factor(RPM))) +
   labs(x = expression(bold("Log(O"["2"]*"%)")), y = "RI") +
   geom_point(size = PointSize, stroke = strokeSize)+
-  coord_cartesian(ylim = c(RIaxisMin, RIaxisMax)) + myTheme + theme(legend.position = "right", legend.key = element_rect(fill = "transparent", color = NA)) +
+  coord_cartesian(ylim = c(RIaxisMin, RIaxisMax)) + myTheme + theme(legend.position = "none", legend.key = element_rect(fill = "transparent", color = NA)) +
   scale_x_continuous(sec.axis = sec_axis(trans = (~10^.),name = element_blank(), breaks = c(0.2, 0.5, 1, 2, 20), labels = c("", "", "", "",""))) +
-  scale_shape_manual(values = c(1,19,1,1,1,1))+ 
+  scale_shape_manual(values = c(1,19,1,1,1,1), guide = "none")+ 
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length = unit(minorAxisLength, "cm"))+
   theme(axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize))
 
 dORIScatter
 dORateScatter <- ggplot(dOdf, aes(x = log10(RPM), y = 1/Rate, shape = as.factor(RPM))) +
   labs(x = element_blank(), y = element_blank()) + 
-  geom_point(size = 5, color = "darkgreen", stroke = strokeSize, show.legend = FALSE)+
+  geom_point(size = PointSize, color = "darkgreen", stroke = strokeSize, show.legend = FALSE)+
   coord_cartesian(ylim = c(RateAxisMin, RateAxisMax)) + myTheme + theme(legend.position = "right", legend.key = element_rect(fill = "transparent", color = NA)) +
   scale_x_continuous(breaks = c(-0.5, 0.0, 0.5, 1.0), labels = c("","","","") ,sec.axis = sec_axis(trans = (~10^.),name = expression(bold("Sparge Gas (O"["2"]*"%)")), breaks = c(0.2, 0.5, 1, 2, 20), labels = c(0.2, 0.5, 1, 2, 20)))+
   scale_shape_manual(values = c(1,19,1,1,1,1))+
@@ -289,40 +296,43 @@ ShakingScatter
 o <-ggplot(data = TempData, aes(x = 1/Rate, y = RI)) + 
   labs(x = "Doubling Time (Hours)", y ="RI")+
   scale_x_continuous(position = "top", limits = c(RateAxisMin, RateAxisMax))+
-  geom_point(size = 5, color= "goldenrod" ,aes(shape= as.factor(Temp))) +
-  scale_shape_manual(values = c(16, 17, 15, 1))+
+  geom_point(color= "goldenrod", aes(shape = as.factor(Temp),size = as.factor(Temp))) +
+  scale_shape_manual(labels = c("65", "70", "75", "80"),name="Temperature", values = c(16, 17, 15, 18))+ 
+  scale_size_manual(values = c(GrowthCurvePointSize-8, GrowthCurvePointSize-8, GrowthCurvePointSize-8, GrowthCurvePointSize-2), guide = "none") +
   geom_smooth(method = "lm", size =2, color ="goldenrod") + myTheme + ylim(RIaxisMin,RIaxisMax) +
-  theme(legend.position=c(0.9,0.9),strip.background = element_blank(), legend.key = element_rect(fill = "white"), legend.text = element_text(size = 40), legend.title = element_text(size =40)) + labs(shape="Temperature (°C)")+
+  theme(legend.position=c(0.9,0.9),strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.text = element_text(size = 48),legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48)) + labs(shape="Temperature (°C)")+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(axis.ticks.y=element_line(color = "black", size = axisTickSize)) + guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-8)))
 o
 
 p<- ggplot(data = pHData, aes(x = 1/Rate, y = RI)) + 
   labs(x = "Doubling Time (Hours)", y ="RI")+  scale_x_continuous(position = "top", limits = c(RateAxisMin,RateAxisMax))+
-  geom_point(size = 5, color= "dodgerBlue" ,aes(shape= as.factor(pH))) +
+  geom_point(size = GrowthCurvePointSize-8, color= "dodgerBlue" ,aes(shape= as.factor(pH))) +
   geom_smooth(method = "lm", size =2) + myTheme + ylim(RIaxisMin,RIaxisMax) +
   theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white")) + labs(shape="pH")+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(axis.text = element_text(size = 48),legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize)) +
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-8)))
 p
 
 q <- ggplot(data = shakingData, aes(x = 1/Rate, y = RI)) + 
   labs(x = "Doubling Time (Hours)", y ="RI", shape = "Shaking Speed")+  scale_x_continuous(position = "top", limits = c(RateAxisMin, RateAxisMax))+
-  geom_point(size = 5, color= "darkorchid4", aes(shape = as.factor(RPM))) +
+  geom_point(color= "darkorchid4",stroke = GrowthCurveStrokeSize-1, aes(shape = as.factor(RPM), size = as.factor(RPM))) +
   geom_smooth(method = "lm", size =2) + myTheme + ylim(RIaxisMin,RIaxisMax) +
-  scale_shape_manual(values = (c(16,17,18,2,1,15,6,0))) +
+  scale_shape_manual(labels = c("0", "50", "61", "75", "97", "125", "200", "300"),name="Shaking Speed", values = c(16,17,18,15,1,2,6,0)) + scale_size_manual(guide = "none", values = c(GrowthCurvePointSize-8, GrowthCurvePointSize-8, GrowthCurvePointSize-2, GrowthCurvePointSize-8, GrowthCurvePointSizeHollow-8, GrowthCurvePointSizeHollow-5, GrowthCurvePointSizeHollow-8, GrowthCurvePointSizeHollow-8))+
   theme(legend.position=c(0.9,0.9),strip.background = element_blank(), legend.key = element_rect(fill = "white")) + labs(shape="RPM")+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40),axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(axis.text=element_text(size = 48) ,legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48),axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize)) +
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-8)))
 q
 r<- ggplot(data = AZData, aes(x = 1/Rate, y = RI))+
   labs(x = "Doubling Time (Hours)", y ="RI")+
-  geom_point(size = PointSize, color= "red") +
+  geom_point(size = GrowthCurvePointSize-8, color= "red") +
   geom_smooth(method = "lm", size =2) + myTheme +xlim(RateAxisMin, RateAxisMax)+ ylim(RIaxisMin,RIaxisMax) +
   theme(legend.position=c(0.9, 0.9),strip.background = element_blank(), legend.key = element_rect(fill = "white"))+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize))
-
+  theme(axis.text = element_text(size = 48),legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_line(color = "black", size = axisTickSize)) +
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-8)))
 r
 
 grid.arrange(o,p,q,n,r,ncol=3 )
@@ -357,11 +367,11 @@ pHGrowthCurveData <- rbind(pHGrowthCurveData, AverageGrowthCurve(pHData, 3, 70, 
 
 myLogpHplot = ggplot(pHGrowthCurveData, aes(x = timeElapsed, y = log2(mean), group = as.factor(ID), shape = as.factor(ID))) +
   geom_line(color="dodgerblue", size=2) +
-  geom_point(color="dodgerblue", size=GrowthCurvePointSize)+ myTheme +
+  geom_point(color="dodgerblue", size=GrowthCurvePointSize, stroke = GrowthCurveStrokeSize)+ myTheme +
   geom_errorbar(aes(x = timeElapsed, ymin = log2(mean)-Log2SE, ymax = log2(mean)+Log2SE), width = 4, size = 1)+
-  scale_shape_manual(breaks = c("1", "3", "2"),labels = c("70  200  2", "70  200  3", "70  200  4"
-  ),name="Experimental Conditions", values = c(16, 17, 15))+
-  xlab(element_blank())+ ylab("Log(OD600)") + myTheme + theme(legend.position = "right",strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize))+
+  scale_shape_manual(breaks = c("1", "3", "2"),labels = c("2", "3", "4"
+  ),name="pH", values = c(16, 17, 15))+
+  xlab(element_blank())+ ylab("Log(OD600)") + myTheme + theme(legend.position = c(0.8, 0.25),strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize), axis.text= element_text(size = 48), legend.text = element_text(size = 48), legend.title = element_text(face = "bold", size = 48))+
   scale_y_continuous(sec.axis = sec_axis(trans = (~2^.),name = "OD600", breaks = c(0.01, 0.1, 0.5, 1, 2), labels = c(0.01, 0.1, 0.5, 1, 2))) +
   coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax-60))
 myLogpHplot
@@ -372,16 +382,16 @@ TempGrowthCurveData <- rbind(TempGrowthCurveData, AverageGrowthCurve(TempData, 3
 TempGrowthCurveData <- rbind(TempGrowthCurveData, AverageGrowthCurve(TempData, 3.00, 80, 200,1,4))
 
 
-myLogTempPlot = ggplot(TempGrowthCurveData, aes(x = timeElapsed, y = log2(mean), group = as.factor(ID), shape = as.factor(ID))) +
+myLogTempPlot = ggplot(TempGrowthCurveData, aes(x = timeElapsed, y = log2(mean), group = as.factor(ID), shape = as.factor(ID), size= as.factor(ID))) +
   geom_line(color="goldenrod", size=2) +
-  geom_point(color="goldenrod", size=GrowthCurvePointSize)+ myTheme +
-  geom_errorbar(aes(x = timeElapsed, ymin = log2(mean)-Log2SE, ymax = log2(mean)+Log2SE), width = 2)+
-  scale_shape_manual(breaks = c("1", "2", "3", "4"),labels = c("65  200  3", "70  200  3", "75  200  3", "80 200 3"
-  ),name="Experimental Conditions", values = c(16, 17, 15, 1))+
-  xlab(element_blank())+ ylab(element_blank()) + myTheme + theme(legend.position = "right",strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize))+
+  geom_point(color="goldenrod", stroke = GrowthCurveStrokeSize)+ myTheme +
+  geom_errorbar(aes(x = timeElapsed, ymin = log2(mean)-Log2SE, ymax = log2(mean)+Log2SE), width = 4, size = 1)+
+  scale_shape_manual(breaks = c("1", "2", "3", "4"),labels = c("65", "70", "75", "80"
+  ),name="Temperature", values = c(16, 17, 15, 18))+ scale_size_manual(values = c(GrowthCurvePointSize, GrowthCurvePointSize, GrowthCurvePointSize, GrowthCurvePointSize+8), guide="none") +
+  xlab(element_blank())+ ylab(element_blank()) + myTheme + theme(legend.position = c(0.8, 0.25), strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize))+
   scale_y_continuous(sec.axis = sec_axis(trans = (~2^.),name = "OD600", breaks = c(0.01, 0.1, 0.5, 1, 2), labels = c(0.01, 0.1, 0.5, 1, 2))) +
-  theme(axis.text.x = element_blank())+
-  coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax))
+  theme(axis.text.x = element_blank(), axis.text= element_text(size = 48), legend.text = element_text(size = 48), legend.title = element_text(face = "bold", size = 48) )+
+  coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax)) +   guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize)))
 myLogTempPlot
 
 #Put all of the average growth curves for each piece of shaking data in a list
@@ -395,15 +405,16 @@ ShakingGrowthCurveData <- rbind(ShakingGrowthCurveData, AverageGrowthCurve(shaki
 ShakingGrowthCurveData <- rbind(ShakingGrowthCurveData, AverageGrowthCurve(shakingData, 3.00, 70, 300, 1,8))
 
 
-myLogShakingPlot <- ggplot(ShakingGrowthCurveData, aes(x = timeElapsed, y = log2(mean), group = as.factor(ID), shape = as.factor(ID))) +
+myLogShakingPlot <- ggplot(ShakingGrowthCurveData, aes(x = timeElapsed, y = log2(mean), group = as.factor(ID), shape = as.factor(ID), size = as.factor(ID))) +
   geom_line(color="darkorchid4", size=2) +
-  geom_point(color="darkorchid4", size=GrowthCurvePointSize)+ myTheme +
+  geom_point(color="darkorchid4",stroke = GrowthCurveStrokeSize)+ myTheme +
   geom_errorbar(aes(x = timeElapsed, ymin = log2(mean)-Log2SE, ymax = log2(mean)+Log2SE), width = 4, size = 1)+
-  scale_shape_manual(breaks = c("1", "2", "3", "4","5","6","7", "8"),labels = c("70  0  3", "70  50  3", "70  61  3", "70 75 3", "70 97 3", "70, 125, 3", "70 200 3", "70 300 3"
-  ),name="Experimental Conditions", values = c(16,17,18,2,1,15,6,0))+
-  theme(legend.position = "right",strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize))+
+  scale_shape_manual(breaks = c("1", "2", "3", "4","5","6","7", "8"),labels = c("0", "50", "61", "75", "97", "125", "200", "300"
+  ),name="Shaking Speed", values = c(16,17,18,15,1,2,6,0)) + scale_size_manual(guide = "none",breaks = c("1", "2", "3", "4","5","6","7", "8"), values = c(GrowthCurvePointSize, GrowthCurvePointSize, GrowthCurvePointSize + 8, GrowthCurvePointSize, GrowthCurvePointSizeHollow, GrowthCurvePointSizeHollow, GrowthCurvePointSizeHollow, GrowthCurvePointSizeHollow))+
+  theme(legend.position = c(0.8, 0.25),strip.background = element_blank(), legend.key = element_rect(fill = "white"), axis.ticks = element_line(color = "black", size = axisTickSize))+
   scale_y_continuous(sec.axis = sec_axis(trans = (~2^.),name = "OD600", breaks = c(0.01, 0.1, 0.5, 1, 2), labels = c(0.01, 0.1, 0.5, 1, 2))) +
-  xlab(element_blank()) +ylab("Log(OD600)")+theme(axis.text.x = element_blank())+  coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax-60))
+  xlab(element_blank()) +ylab("Log(OD600)")+theme(axis.text.x = element_blank(), axis.text= element_text(size = 48), legend.text = element_text(size = 48), legend.title = element_text(face = "bold", size = 48) )+  coord_cartesian(ylim = c(LogODMin, LogODMax), xlim = c(TimeMin, TimeMax-60)) +
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize)))
 myLogShakingPlot
 
 grid.arrange(myLogShakingPlot,myLogTempPlot, myLogpHplot,myLogdOPlot, ncol=2)
@@ -459,35 +470,51 @@ Anova(lm(GDGT.8.Normalized~Temp+RPM+pH, data = batchdata), type = "II")
 batchGDGTData <- batchdata[which(colnames(batchdata)=="GDGT.0"):which(colnames(batchdata) =="GDGT.8")]
 batchNMDS <- metaMDS(batchGDGTData, distance = "bray", k =2)
 batchNMDS_X_Y <- data.frame(batchNMDS$points)
-ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$Temp))) + geom_point(size = 5) + labs(shape="Temperature") +scale_shape_manual(values = c(16, 17, 15, 1)) + myTheme+
-  theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
-  theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.ticks.y=element_line(color = "black", size = axisTickSize))
+TempNMDS <- ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$Temp), size = as.factor(batchdata$Temp))) + geom_point(color = "goldenrod") + labs(shape="Temperature") +
+  scale_shape_manual(labels = c("65", "70", "75", "80"),name="Temperature", values = c(16,17,18,15)) + scale_size_manual(guide = "none", values = c(GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize, GrowthCurvePointSize-3))+ myTheme+
+  theme(legend.position=c(0.5, 0.5),strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
+  theme(axis.text = element_text(size = 48),axis.text.x = element_blank(),axis.title.x = element_blank(),axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
+  theme(legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.ticks.y=element_line(color = "black", size = axisTickSize))+
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
 
-ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$pH))) + geom_point(size = 5) + labs(shape="pH")+ myTheme+
-  theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
-  theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.ticks.y=element_line(color = "black", size = axisTickSize))
 
-ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$RPM))) + geom_point(size=5) + labs(shape="RPM") +scale_shape_manual(values = (c(16,17,18,2,1,15,6,0))) +myTheme+
-  theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
-  theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.ticks.y=element_line(color = "black", size = axisTickSize))
+pHNMDS <- ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$pH))) + geom_point(size = GrowthCurvePointSize-3, color = "dodgerblue") + labs(shape="pH")+ myTheme+
+  theme(legend.position=c(0.5, 0.5),strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
+  theme(axis.text = element_text(size = 48), axis.text.x = element_blank(),axis.title.x = element_blank(),axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
+  theme(legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.ticks.y=element_line(color = "black", size = axisTickSize))+
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
 
+ShakingNMDS <- ggplot(batchNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(batchdata$RPM), size = as.factor(batchdata$RPM))) + geom_point(color = "darkorchid4", stroke = GrowthCurveStrokeSize-1) + labs(shape="RPM") +scale_shape_manual(labels = c("0", "50", "61", "75", "97", "125", "200", "300"),name="Shaking Speed", values = c(16,17,18,15,1,2,6,0)) + 
+  scale_size_manual(guide = "none", values = c(GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize, GrowthCurvePointSize-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3))+
+  myTheme+
+  theme(legend.position=c(0.5,0.5),strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
+  theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
+  theme(axis.text = element_text(size = 48),legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.ticks.y=element_line(color = "black", size = axisTickSize))+
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
+
+grid.arrange(TempNMDS, pHNMDS, ShakingNMDS, ncol =1)
 
 dOGDGTData <- dOdf[which(colnames(dOdf)=="GDGT.0"):which(colnames(dOdf) =="GDGT.8")]
 oNMDS <- metaMDS(dOGDGTData, distance = "bray", k=2)
 oNMDS_X_Y <- data.frame(oNMDS$points)
-ggplot(oNMDS_X_Y, aes(x=MDS1, y = MDS2, color = as.factor(dOdf$Phase),shape = as.factor(dOdf$RPM))) + geom_point(size = 5) + labs(shape="O2", color = "Phase") + scale_shape_manual(values = (c(16,17,18,2,1,15)), labels = c("0.2", "0.2*", "0.5", "1", "2", "20"))+ myTheme+
-  theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
+ggplot(oNMDS_X_Y, aes(x=MDS1, y = MDS2, color = as.factor(dOdf$Phase))) + 
+  geom_point(stroke = GrowthCurveStrokeSize -1, aes(shape = as.factor(dOdf$RPM), size = as.factor(dOdf$RPM))) +
+  scale_shape_manual(name = "O2%", values = c(16,17,15,1,2,6))+ scale_size_manual(guide = "none",values = c(GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3, GrowthCurvePointSizeHollow-3)) +
+  labs(shape="O2", color = "Phase") + myTheme+
+  theme(legend.position=c(0.8,0.8),strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(axis.title = element_text(face = "bold", size = 48),axis.text = element_text(size = 48),legend.text = element_text(size = 48), legend.title = element_text(face = "bold",size =48), axis.ticks.y=element_line(color = "black", size = axisTickSize))+
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
 
 AZGDGTData <-  AZData[which(colnames(AZData)=="GDGT.0"):which(colnames(AZData) =="GDGT.8")]
 AZNMDS <-  metaMDS(AZGDGTData, distance = "bray", k=2)
 AZNMDS_X_Y <- data.frame(AZNMDS$points)
-ggplot(AZNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(AZData$Hours))) + geom_point(size = 5) + labs(shape="Time")+ myTheme+
-  theme(legend.position="right",strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
+ggplot(AZNMDS_X_Y, aes(x=MDS1, y = MDS2, shape = as.factor(AZData$Hours), size = as.factor(AZData$Hours))) + geom_point(color = "red") + labs(shape="Time")+ myTheme+
+  scale_shape_manual(labels = c("10", "18", "30", "70"),name="Doubling Time", values = c(16, 17, 15, 18))+ 
+  scale_size_manual(values = c(GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize-3, GrowthCurvePointSize), guide = "none") +
+  theme(axis.text = element_text(size = 48), axis.title = element_text(face = "bold", size = 48),legend.position=c(0.8,0.8),strip.background = element_blank(),legend.key = element_rect(fill = "white"))+
   theme(axis.ticks = element_line(color = "black", size = axisTickSize),axis.ticks.length.x = unit(minorAxisLength, "cm"))+
-  theme(legend.text = element_text(size = 40), legend.title = element_text(size =40), axis.ticks.y=element_line(color = "black", size = axisTickSize))
+  theme(legend.text = element_text(size = 48), legend.title = element_text(size =48), axis.ticks.y=element_line(color = "black", size = axisTickSize))+
+  guides(shape = guide_legend(override.aes = list(size=GrowthCurvePointSize-3)))
+
 
