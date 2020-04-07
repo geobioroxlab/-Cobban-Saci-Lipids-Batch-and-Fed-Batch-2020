@@ -1,6 +1,6 @@
 # Read Me Cobban Batch Experiments 2020
 
-The following describes the files located herein and their functions related to the manuscript tilted "Growth rates and core lipid compositions shift in Sulfolobus acidocaldarius in response to environmental change." 
+The following describes the files located herein and their functions related to the manuscript tilted "Multiple environmental parameters impact core lipid cyclization in Sulfolobus acidocaldarius." 
 
 All code and data was contributed by Alec Cobban in or before February 2020 unless otherwise recorded.
 
